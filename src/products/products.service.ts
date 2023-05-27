@@ -13,6 +13,8 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 
+import { validate as isUUID } from 'uuid';
+
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger(ProductsService.name);
@@ -41,11 +43,22 @@ export class ProductsService {
     });
   }
 
-  async findOne(id: string) {
-    const product = await this.productsRepository.findOneBy({ id });
+  async findOne(find: string) {
+    let product: Product;
+
+    if (isUUID(find)) {
+      product = await this.productsRepository.findOneBy({ id: find });
+    } else {
+      const queryBuilder = this.productsRepository.createQueryBuilder();
+      product = await queryBuilder
+        .where('LOWER(title) = :term OR slug = :term', {
+          term: find.toLocaleLowerCase(),
+        })
+        .getOne();
+    }
 
     if (!product) {
-      throw new NotFoundException(`Product with id ${id} not found`);
+      throw new NotFoundException(`Product with term ${find} not found`);
     }
 
     return product;
