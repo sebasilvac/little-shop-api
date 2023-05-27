@@ -4,6 +4,12 @@
 
 # Little Shop
 
-levantar base de datos
-
+1. Clonar proyecto
+2. instalar dependencias
+```yarn install```
+3. renombrar archivo ```.env.example``` a ```.env```
+4. cambiar variables de entorno
+5. levantar base de datos
 ```docker-compose up -d```
+6. levantar proyecto en modo desarollo
+```yarn start:dev```
