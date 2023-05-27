@@ -35,4 +35,14 @@ export class CreateProductDto {
   @IsOptional()
   @IsArray()
   sizes?: string[];
+
+  @IsString({ each: true })
+  @IsOptional()
+  @IsArray()
+  tags?: string[];
+
+  @IsString({ each: true })
+  @IsOptional()
+  @IsArray()
+  images?: string[];
 }

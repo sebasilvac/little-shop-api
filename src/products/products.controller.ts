@@ -30,12 +30,15 @@ export class ProductsController {
 
   @Get(':find')
   findOne(@Param('find') find: string) {
-    return this.productsService.findOne(find);
+    return this.productsService.findOnePlain(find);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.update(+id, updateProductDto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
+    return this.productsService.update(id, updateProductDto);
   }
 
   @Delete(':id')
