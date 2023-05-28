@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { validate as isUUID } from 'uuid';
 
 import { Product, ProductImage } from './entities';
@@ -24,6 +24,8 @@ export class ProductsService {
 
     @InjectRepository(ProductImage)
     private readonly productImagesRepository: Repository<ProductImage>,
+
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -88,24 +90,44 @@ export class ProductsService {
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
+    const { images, ...toUpdate } = updateProductDto;
+
     // preload busca por el id, y setea los valores que se le pasan en updateProductDto
     const product = await this.productsRepository.preload({
       id,
-      ...updateProductDto,
-      images: [],
+      ...toUpdate,
     });
 
     if (!product) {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
 
+    // query runner
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      await this.productsRepository.save(product);
+      if (images) {
+        await queryRunner.manager.delete(ProductImage, {
+          product: { id },
+        });
+
+        product.images = images.map((image) =>
+          this.productImagesRepository.create({ url: image }),
+        );
+      }
+
+      await queryRunner.manager.save(product);
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      return this.findOnePlain(id);
     } catch (error) {
+      await queryRunner.rollbackTransaction();
+      await queryRunner.release();
       this.handleDBException(error);
     }
-
-    return product;
   }
 
   async remove(id: string) {
@@ -122,5 +144,14 @@ export class ProductsService {
     throw new InternalServerErrorException(
       'Unextepted error, check server logs',
     );
+  }
+
+  async deleteAllproducts() {
+    try {
+      const products = await this.productsRepository.find();
+      await this.productsRepository.remove(products);
+    } catch (error) {
+      this.handleDBException(error);
+    }
   }
 }
