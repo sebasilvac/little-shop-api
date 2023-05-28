@@ -11,5 +11,7 @@
 4. cambiar variables de entorno
 5. levantar base de datos
 ```docker-compose up -d```
-6. levantar proyecto en modo desarollo
+6. levantar proyecto en modo desarrollo
 ```yarn start:dev```
+7. correr seeders
+```http://localhost:3000/api/seed```
