@@ -30,15 +30,6 @@ export class FilesService {
       throw new BadRequestException(parsedCsv.errors[0].message);
     }
 
-    console.log(parsedCsv);
-
-    // const products = parsedCsv.data.map((product) => {
-    //   product.price = Number(product.price);
-    //   product.stock = Number(product.stock);
-
-    //   return product;
-    // });
-
     this.insertProducts(parsedCsv.data, user.store);
   }
 
