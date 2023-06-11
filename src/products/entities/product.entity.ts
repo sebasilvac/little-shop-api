@@ -16,6 +16,9 @@ export class Product {
   id: string;
 
   @Column('text', { unique: true })
+  code: string;
+
+  @Column('text', { unique: true })
   title: string;
 
   @Column('float', { default: 0 })

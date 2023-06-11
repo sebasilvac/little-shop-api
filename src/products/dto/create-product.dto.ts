@@ -11,6 +11,10 @@ import {
 export class CreateProductDto {
   @IsString()
   @MinLength(3)
+  code: string;
+
+  @IsString()
+  @MinLength(3)
   title: string;
 
   @IsNumber()

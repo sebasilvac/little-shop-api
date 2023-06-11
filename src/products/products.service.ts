@@ -35,7 +35,7 @@ export class ProductsService {
 
       const product = this.productsRepository.create({
         ...productDetails,
-        user,
+        price: Number(productDetails.price),
         images: images.map((image) =>
           this.productImagesRepository.create({ url: image }),
         ),
@@ -44,6 +44,7 @@ export class ProductsService {
       await this.productsRepository.save(product);
       return { ...product, images };
     } catch (error) {
+      this.logger.error('Error with:' + JSON.stringify(createProductDto));
       this.handleDBException(error);
     }
   }
