@@ -25,12 +25,17 @@ export class ProductsController {
   @Post()
   @Auth(ValidRoles.admin)
   create(@Body() createProductDto: CreateProductDto, @GetUser() user: User) {
-    return this.productsService.create(createProductDto, user);
+    return this.productsService.create(createProductDto, user.store);
   }
 
   @Get()
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.productsService.findAll(paginationDto);
+  async findAll(@Query() paginationDto: PaginationDto, @GetUser() user: User) {
+    const products = await this.productsService.findAll(
+      paginationDto,
+      user.store,
+    );
+
+    return products;
   }
 
   @Get(':find')

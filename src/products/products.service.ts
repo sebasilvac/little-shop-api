@@ -14,6 +14,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { User } from '../auth/entities/user.entity';
+import { Store } from 'src/stores/entities/store.entity';
 
 @Injectable()
 export class ProductsService {
@@ -29,13 +30,14 @@ export class ProductsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(createProductDto: CreateProductDto, user: User) {
+  async create(createProductDto: CreateProductDto, store: Store) {
     try {
       const { images = [], ...productDetails } = createProductDto;
 
       const product = this.productsRepository.create({
         ...productDetails,
         price: Number(productDetails.price),
+        store,
         images: images.map((image) =>
           this.productImagesRepository.create({ url: image }),
         ),
@@ -49,13 +51,16 @@ export class ProductsService {
     }
   }
 
-  async findAll(paginationDto: PaginationDto) {
+  async findAll(paginationDto: PaginationDto, store: Store) {
     const { limit, offset } = paginationDto;
     const products = await this.productsRepository.find({
       take: limit,
       skip: offset,
       relations: {
         images: true,
+      },
+      where: {
+        store: { id: store.id },
       },
     });
 
@@ -139,21 +144,25 @@ export class ProductsService {
   }
 
   private handleDBException(error: any) {
+    this.logger.error(error);
+
     if (error.code === '23505') {
       throw new BadRequestException(error.detail);
     }
 
-    this.logger.error(error);
     throw new InternalServerErrorException(
       'Unextepted error, check server logs',
     );
   }
 
-  async deleteAllproducts() {
+  async deleteAll() {
     try {
       const products = await this.productsRepository.find();
       await this.productsRepository.remove(products);
+
+      return { deleted: products.length };
     } catch (error) {
+      console.log('error', error);
       this.handleDBException(error);
     }
   }
