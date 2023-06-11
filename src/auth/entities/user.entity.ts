@@ -1,12 +1,12 @@
-import { Product } from '../../products/entities';
 import {
   BeforeInsert,
   BeforeUpdate,
   Column,
   Entity,
-  OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Store } from '../../stores/entities/store.entity';
 
 @Entity('users')
 export class User {
@@ -28,8 +28,13 @@ export class User {
   @Column('text', { array: true, default: ['user'] })
   roles: string[];
 
-  @OneToMany(() => Product, (product) => product.user)
-  products?: Product[];
+  @OneToOne(() => Store, (store) => store.user, {
+    eager: true,
+  })
+  store: Store;
+
+  @OneToOne(() => Store, (store) => store.createdBy)
+  stores: Store[];
 
   @BeforeInsert()
   checkFieldsBeforeInsert() {

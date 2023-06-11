@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ProductImage } from './product-image.entity';
-import { User } from '../../auth/entities/user.entity';
+import { Store } from 'src/stores/entities/store.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -46,10 +46,10 @@ export class Product {
   })
   images?: ProductImage[];
 
-  @ManyToOne(() => User, (user) => user.products, {
-    eager: true,
+  @ManyToOne(() => Store, (store) => store.products, {
+    eager: false,
   })
-  user: User;
+  store: Store;
 
   @BeforeInsert()
   checkSlugInert() {
