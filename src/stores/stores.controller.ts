@@ -13,7 +13,8 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { Auth, GetUser } from '../auth/decorators';
 import { User } from '../auth/entities/user.entity';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PaginationDto } from '../common/dtos/pagination.dto';
+import { ValidRoles } from '../auth/interfaces';
 
 @Controller('stores')
 @Auth()
@@ -21,30 +22,36 @@ export class StoresController {
   constructor(private readonly storesService: StoresService) {}
 
   @Post()
-  create(
-    @Body() createStoreDto: CreateStoreDto,
-    @GetUser() userConnected: User,
-  ) {
-    return this.storesService.create(createStoreDto, userConnected);
+  @Auth(ValidRoles.admin)
+  create(@Body() createStoreDto: CreateStoreDto, @GetUser() user: User) {
+    return this.storesService.create(createStoreDto, user);
   }
 
   @Get()
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.storesService.findAll(paginationDto);
+  @Auth(ValidRoles.admin)
+  findAll(@Query() paginationDto: PaginationDto, @GetUser() user: User) {
+    return this.storesService.findAll(paginationDto, user);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.storesService.findOne(id);
+  @Auth()
+  findOne(@Param('id') id: string, @GetUser() user: User) {
+    return this.storesService.findOne(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStoreDto: UpdateStoreDto) {
-    return this.storesService.update(id, updateStoreDto);
+  @Auth(ValidRoles.admin)
+  update(
+    @Param('id') id: string,
+    @Body() updateStoreDto: UpdateStoreDto,
+    @GetUser() user: User,
+  ) {
+    return this.storesService.update(id, updateStoreDto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.storesService.remove(id);
+  @Auth(ValidRoles.superUser)
+  remove(@Param('id') id: string, @GetUser() user: User) {
+    return this.storesService.remove(id, user);
   }
 }

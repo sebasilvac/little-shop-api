@@ -46,7 +46,6 @@ export class ProductsService {
       await this.productsRepository.save(product);
       return { ...product, images };
     } catch (error) {
-      this.logger.error('Error with:' + JSON.stringify(createProductDto));
       this.handleDBException(error);
     }
   }

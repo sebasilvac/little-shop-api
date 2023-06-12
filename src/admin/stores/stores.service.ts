@@ -4,16 +4,17 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
+import { validate as isUUID } from 'uuid';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
-import { User } from '../auth/entities/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from './entities/store.entity';
-import { Repository } from 'typeorm';
-import { validate as isUUID } from 'uuid';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
+
+import { User } from '../../auth/entities/user.entity';
+import { PaginationDto } from '../../common/dtos/pagination.dto';
 
 @Injectable()
 export class StoresService {
@@ -26,12 +27,22 @@ export class StoresService {
     private readonly storesRepository: Repository<Store>,
   ) {}
 
-  async create(createStoreDto: CreateStoreDto, user: User) {
+  async create(createStoreDto: CreateStoreDto, userConnected: User) {
     try {
+      const user = await this.userRepository.findOneBy({
+        id: createStoreDto.userId,
+      });
+
+      if (!user) {
+        throw new BadRequestException(
+          `User with id ${createStoreDto.userId} not found`,
+        );
+      }
+
       const store = this.storesRepository.create({
         ...createStoreDto,
         user,
-        createdBy: user,
+        createdBy: userConnected,
       });
 
       await this.storesRepository.save(store);
@@ -41,34 +52,30 @@ export class StoresService {
     }
   }
 
-  async findAll(paginationDto: PaginationDto, user: User) {
+  async findAll(paginationDto: PaginationDto) {
     const { limit, offset } = paginationDto;
     const stores = await this.storesRepository.find({
       take: limit,
       skip: offset,
-      where: {
-        user: { id: user.id },
+      relations: {
+        user: true,
       },
     });
 
     return stores;
   }
 
-  async findOne(find: string, user: User) {
+  async findOne(find: string) {
     let store: Store;
 
     if (isUUID(find)) {
-      store = await this.storesRepository.findOneBy({
-        id: find,
-        user: { id: user.id },
-      });
+      store = await this.storesRepository.findOneBy({ id: find });
     } else {
       const queryBuilder = this.storesRepository.createQueryBuilder('prod');
       store = await queryBuilder
         .where('LOWER(name) = :term OR slug = :term', {
           term: find.toLocaleLowerCase(),
         })
-        .andWhere('prod.user = :userId', { userId: user.id })
         .getOne();
     }
 
@@ -79,20 +86,17 @@ export class StoresService {
     return store;
   }
 
-  async update(id: string, updateStoreDto: UpdateStoreDto, user: User) {
+  async update(id: string, updateStoreDto: UpdateStoreDto) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { userId, ...rest } = updateStoreDto;
+
     const store = await this.storesRepository.preload({
       id,
-      ...updateStoreDto,
+      ...rest,
     });
 
     if (!store) {
       throw new NotFoundException(`Store with id ${id} not found`);
-    }
-
-    if (user && store.user.id !== user.id) {
-      throw new UnauthorizedException(
-        `You are not allowed to update this store`,
-      );
     }
 
     try {
@@ -103,13 +107,19 @@ export class StoresService {
     }
   }
 
-  async remove(id: string, user: User) {
-    const store = await this.findOne(id, user);
-    if (!store) {
-      throw new NotFoundException(`Store with id ${id} not found`);
-    }
-
+  async remove(id: string) {
+    const store = await this.findOne(id);
     await this.storesRepository.remove(store);
+  }
+
+  async deleteAll() {
+    try {
+      const stores = await this.storesRepository.find();
+      await this.storesRepository.remove(stores);
+    } catch (error) {
+      console.log(error);
+      this.handleDBException(error);
+    }
   }
 
   private handleDBException(error: any) {
