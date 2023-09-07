@@ -1,6 +1,7 @@
 import {
   Controller,
   FileTypeValidator,
+  Logger,
   ParseFilePipe,
   Post,
   UploadedFile,
@@ -15,6 +16,7 @@ import { User } from 'src/auth/entities/user.entity';
 @Controller('files')
 @Auth()
 export class FilesController {
+  private logger = new Logger('DatabaseMiddleware');
   constructor(private readonly filesService: FilesService) {}
 
   @Post('products')
@@ -29,6 +31,10 @@ export class FilesController {
     file: Express.Multer.File,
     @GetUser() user: User,
   ) {
+    this.logger.error({
+      user: user,
+    });
+
     await this.filesService.loadProductFile(file.buffer.toString(), user);
 
     return {

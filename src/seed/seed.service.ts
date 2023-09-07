@@ -19,8 +19,8 @@ export class SeedService {
   ) {}
 
   async deleteAll() {
-    await this.productsService.deleteAll();
-    await this.storeService.deleteAll();
+    //await this.productsService.deleteAll();
+    //await this.storeService.deleteAll();
     await this.userRepository.createQueryBuilder().delete().execute();
     return 'All products deleted';
   }
@@ -60,7 +60,6 @@ export class SeedService {
       insertPromises.push(
         this.storeService.create(
           {
-            userId: user.id,
             ...store,
           },
           user,

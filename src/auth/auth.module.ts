@@ -22,7 +22,7 @@ import { AuthService } from './auth.service';
       useFactory: (configService: ConfigService) => {
         return {
           secret: configService.get('JWT_SECRET'),
-          signOptions: { expiresIn: '2h' },
+          signOptions: { expiresIn: '30d' },
         };
       },
     }),

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 //import { parse } from 'path';
 
 import { parse } from 'papaparse';
@@ -8,6 +8,7 @@ import { Store } from 'src/stores/entities/store.entity';
 
 @Injectable()
 export class FilesService {
+  private logger = new Logger('DatabaseMiddleware');
   constructor(private readonly productsService: ProductsService) {}
 
   async loadProductFile(file: string, user: User) {
@@ -29,6 +30,8 @@ export class FilesService {
     if (parsedCsv.errors.length > 0) {
       throw new BadRequestException(parsedCsv.errors[0].message);
     }
+
+    this.logger.error(parsedCsv.data);
 
     this.insertProducts(parsedCsv.data, user.store);
   }
