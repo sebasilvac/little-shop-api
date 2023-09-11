@@ -96,6 +96,7 @@ export class ProductsService {
     return { ...rest, images: images.map((image) => image.url) };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async update(id: string, updateProductDto: UpdateProductDto, user: User) {
     const { images, ...toUpdate } = updateProductDto;
 
@@ -125,12 +126,13 @@ export class ProductsService {
         );
       }
 
-      await queryRunner.manager.save({ ...product, user });
+      await queryRunner.manager.save<Product>(product);
       await queryRunner.commitTransaction();
       await queryRunner.release();
 
       return this.findOnePlain(id);
     } catch (error) {
+      console.log('error', error);
       await queryRunner.rollbackTransaction();
       await queryRunner.release();
       this.handleDBException(error);
