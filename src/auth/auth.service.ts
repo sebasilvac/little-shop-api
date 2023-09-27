@@ -76,4 +76,19 @@ export class AuthService {
     console.log('error');
     throw new InternalServerErrorException('Please check server logs');
   }
+
+  async googleLogin(req) {
+    const { email } = req.user;
+    const user = await this.usersRepository.findOne({
+      where: { email },
+      select: ['id', 'email'],
+    });
+
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    return {
+      email: user.email,
+      token: this.getJwtToken({ id: user.id }),
+    };
+  }
 }

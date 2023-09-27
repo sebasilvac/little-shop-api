@@ -1,12 +1,19 @@
-import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+  Res,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 import { CreateUserDto, LoginUserDto } from './dto';
-import { Auth, GetUser, RawHeaders, RoleProtected } from './decorators';
+import { Auth, GetUser } from './decorators';
 import { User } from './entities/user.entity';
 import { AuthService } from './auth.service';
-import { UserRolGuard } from './guards/user-rol-guard';
-import { ValidRoles } from './interfaces';
 
 @Controller('auth')
 export class AuthController {
@@ -22,40 +29,26 @@ export class AuthController {
     return this.authService.login(loginUserDto);
   }
 
+  @Get()
+  @UseGuards(AuthGuard('google'))
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  async googleAuth(@Req() req) {
+    return;
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req, @Res() res) {
+    if (!req.user) throw new UnauthorizedException('Invalid credentials');
+    const { token, email } = await this.authService.googleLogin(req);
+    res.redirect(
+      `${process.env.REDIRECT_URL}/auth/callback?token=${token}&email=${email}`,
+    );
+  }
+
   @Get('check-status')
   @Auth()
   checkAuthStatus(@GetUser() user: User) {
     return this.authService.checkAuthStatus(user);
-  }
-
-  @Get('private')
-  @UseGuards(AuthGuard())
-  privateRoute(
-    @GetUser() user: User,
-    @GetUser('email') email: string,
-    @GetUser(['id', 'email']) dataUser: { id: number; email: string },
-    @RawHeaders() headers: any,
-  ) {
-    console.log(headers);
-
-    return {
-      user,
-      email,
-      dataUser,
-    };
-  }
-
-  //@SetMetadata('roles', ['admin', 'super-user'])
-  @Get('private2')
-  @RoleProtected(ValidRoles.admin, ValidRoles.superUser)
-  @UseGuards(AuthGuard(), UserRolGuard)
-  privateRoute2(@GetUser() user: User) {
-    return user;
-  }
-
-  @Get('private3')
-  @Auth(ValidRoles.admin)
-  privateRoute3(@GetUser() user: User) {
-    return user;
   }
 }
